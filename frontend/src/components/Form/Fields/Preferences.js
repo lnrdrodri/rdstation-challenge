@@ -1,41 +1,31 @@
-// Preferences.js
-
 import React, { useState } from 'react';
-import Checkbox from '../../shared/Checkbox';
+import SelectableCard from '../../shared/SelectableCard';
 
-function Preferences({
-  preferences,
-  selectedPreferences = [],
-  onPreferenceChange,
-}) {
-  const [currentPreferences, setCurrentPreferences] = useState(selectedPreferences)
+function Preferences({ preferences, selectedPreferences = [], onPreferenceChange }) {
+  const [current, setCurrent] = useState(selectedPreferences);
 
-  const handlePreferenceChange = (preference) => {
-    const updatedPreferences = currentPreferences.includes(preference)
-      ? currentPreferences.filter((pref) => pref !== preference)
-      : [...currentPreferences, preference];
-
-    setCurrentPreferences(updatedPreferences);
-    onPreferenceChange(updatedPreferences);
+  const handleToggle = (pref) => {
+    const updated = current.includes(pref)
+      ? current.filter((p) => p !== pref)
+      : [...current, pref];
+    setCurrent(updated);
+    onPreferenceChange(updated);
   };
 
   return (
-    <div className="mb-4">
-      <h2 className="text-lg font-bold mb-2">Preferências:</h2>
-      <ul>
-        {preferences.map((preference, index) => (
-          <li key={index} className="mb-2">
-            <Checkbox
-              value={preference}
-              checked={currentPreferences.includes(preference)}
-              onChange={() => handlePreferenceChange(preference)}
-              className="text-blue-500"
-            >
-              {preference}
-            </Checkbox>
-          </li>
+    <div>
+      <h2 className="text-lg font-bold text-primary mb-1">Preferências</h2>
+      <p className="text-sm text-muted mb-5">Selecione o que é mais importante para o seu negócio</p>
+      <div className="flex flex-col gap-3">
+        {preferences.map((pref, i) => (
+          <SelectableCard
+            key={i}
+            label={pref}
+            selected={current.includes(pref)}
+            onClick={() => handleToggle(pref)}
+          />
         ))}
-      </ul>
+      </div>
     </div>
   );
 }

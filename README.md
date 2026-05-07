@@ -95,7 +95,9 @@ Certifique-se de que todos os critérios de aceite são atendidos durante o dese
 
 ## Autor
 
-Desenvolvido por [Seu Nome]
+Desenvolvido por Leonardo Rodrigues
+
+Mais informações sobre o desafio no [README.md da pasta frontend](frontend/README.md)
 
 ## Licença
 

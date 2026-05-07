@@ -1,70 +1,107 @@
-# Getting Started with Create React App
+# RD Station — Frontend
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Aplicação React para recomendação de produtos RD Station com base nas preferências e funcionalidades escolhidas pelo usuário.
 
-## Available Scripts
+---
 
-In the project directory, you can run:
+## Como rodar
 
-### `yarn start`
+```bash
+# Na raiz do frontend
+cd monorepo/frontend
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+npm install
+npm start
+```
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+A aplicação ficará disponível em `http://localhost:3000`.
 
-### `yarn test`
+> O frontend consome a API do backend em `http://localhost:3001`. Para rodar o projeto completo, use `yarn dev` na raiz do monorepo.
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+---
 
-### `yarn build`
+## Design
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+### Cores e tema
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+As cores foram escolhidas com base na paleta de identidade visual do site da RD Station. O tom turquesa `#19c1ce` foi usado como cor de destaque (_accent_), refletindo diretamente a cor primária da marca.
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+O sistema de cores é definido via variáveis CSS em [src/index.css](src/index.css) e estendido no Tailwind em [tailwind.config.js](tailwind.config.js), o que permite suporte nativo ao **modo escuro** sem duplicação de estilos. O dark mode é ativado via classe `.dark` no `<html>`, com preferência salva em `localStorage`.
 
-### `yarn eject`
+### Formulário em etapas
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+O formulário foi dividido em 3 etapas sequenciais — **Preferências → Funcionalidades → Tipo de recomendação** — em vez de exibir todos os campos de uma vez.
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+Essa escolha reduz a carga cognitiva do usuário: cada etapa apresenta um conjunto coeso de opções relacionadas, tornando a tarefa mais compreensível e menos intimidante. O indicador de progresso (StepIndicator) reforça o senso de avanço e conclusão.
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+### Checkboxes como cards selecionáveis
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+Ao invés de checkboxes nativos do HTML, as opções de preferências e funcionalidades são renderizadas como **cards clicáveis** ([SelectableCard](src/components/shared/SelectableCard.js)).
 
-## Learn More
+Isso aumenta significativamente a área de toque/clique de cada opção, melhorando a usabilidade em dispositivos móveis e reduzindo erros de seleção. Visualmente, o card selecionado recebe destaque de borda e fundo na cor _accent_, comunicando o estado com clareza sem depender apenas da cor.
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+As opções de tipo de recomendação (`SingleProduct` / `MultipleProducts`) usam a variante detalhada do mesmo componente, com ícone e descrição, por exigirem mais contexto para o usuário tomar uma decisão informada.
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+---
 
-### Code Splitting
+## Decisões técnicas
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+### `Set` para lookup no serviço de recomendações
 
-### Analyzing the Bundle Size
+No [recommendation.service.js](src/services/recommendation.service.js), as preferências e funcionalidades selecionadas são convertidas para `Set` antes de qualquer comparação:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+```js
+const selectedPreferences = new Set(formData.selectedPreferences);
+const selectedFeatures = new Set(formData.selectedFeatures);
+```
 
-### Making a Progressive Web App
+A busca com `Set.has()` é **O(1)**, enquanto `Array.includes()` é **O(n)**. Como as comparações acontecem dentro de `filter` e `map` que já iteram sobre os produtos, evitar um segundo loop linear por elemento mantém a complexidade geral controlada.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+### `filter` + `map` em vez de `reduce`
 
-### Advanced Configuration
+O cálculo de score poderia ser feito em um único `reduce`, mas foi mantido em dois passos separados:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+1. `filter` — descarta produtos sem nenhuma correspondência
+2. `map` — calcula o score dos produtos restantes
 
-### Deployment
+Essa separação favorece a **leitura e manutenção do código**: cada etapa tem uma responsabilidade clara. O `reduce` é uma fonte comum de confusão para desenvolvedores menos experientes, especialmente quando o acumulador muda de forma ao longo da iteração.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+### Ordenação por score e depois por ID decrescente
 
-### `yarn build` fails to minify
+```js
+productsMatch.sort((a, b) => b.score - a.score || b.id - a.id);
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+O critério primário é o **score** (mais correspondências = mais relevante). O critério de desempate é o **ID decrescente**, priorizando produtos mais recentes quando dois produtos têm a mesma pontuação. Isso garante um resultado determinístico com um critério de negócio implícito: em caso de empate, o produto mais novo tem preferência.
+
+### Separação em camada de serviço
+
+A lógica de recomendação fica isolada em [recommendation.service.js](src/services/recommendation.service.js), uma função pura sem dependência de React. Isso permite:
+
+- Testar o algoritmo diretamente, sem precisar renderizar componentes ([recommendation.service.test.js](src/services/recommendation.service.test.js))
+- Reutilizar ou migrar a lógica independentemente da UI
+
+### Hook `useRecommendations` como adaptador
+
+O hook [useRecommendations.js](src/hooks/useRecommendations.js) funciona como uma ponte entre o estado do formulário e o serviço puro. Esse padrão mantém os componentes desacoplados da lógica de negócio e facilita substituir ou expandir o serviço sem alterar os componentes que o consomem.
+
+---
+
+## Testes
+
+```bash
+npm test
+```
+
+O desafio original incluía 4 casos de teste para o serviço de recomendações. A cobertura foi expandida para 11 testes em [recommendation.service.test.js](src/services/recommendation.service.test.js).
+
+O foco foi testar a lógica de negócio central — o algoritmo de recomendação — já que ela é uma função pura e, portanto, fácil de testar de forma isolada e determinística.
+
+Os casos cobertos incluem:
+
+- Retorno vazio quando não há seleções ou quando nenhum produto tem correspondência
+- Correspondência por preferência, por funcionalidade, e pela combinação de ambas
+- Comportamento padrão quando `selectedRecommendationType` não é informado
+- Retorno correto para `SingleProduct` e `MultipleProducts`
+- Lógica de desempate por ID quando dois produtos têm o mesmo score
+- Cálculo correto do score somando preferências e funcionalidades correspondentes

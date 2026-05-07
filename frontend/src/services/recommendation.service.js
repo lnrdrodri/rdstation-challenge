@@ -1,12 +1,7 @@
-// getRecommendations.js
-
 const getRecommendations = (
   formData = { selectedPreferences: [], selectedFeatures: [] },
   products
 ) => {
-  /**
-   * Crie aqui a lógica para retornar os produtos recomendados. - OK
-   */
   const selectedPreferences = new Set(formData.selectedPreferences);
   const selectedFeatures = new Set(formData.selectedFeatures);
   const selectedRecommendationType = formData.selectedRecommendationType || 'SingleProduct';

@@ -1,32 +1,41 @@
 import React, { useState } from 'react';
+import { SunIcon, MoonIcon } from '@heroicons/react/24/outline';
+import { useDarkMode } from './hooks/useDarkMode';
+import Button from './components/shared/Button';
 import Form from './components/Form/Form';
 import RecommendationList from './components/RecommendationList/RecommendationList';
 
 function App() {
-  const [recommendations, setRecommendations ] = useState([])
+  const [recommendations, setRecommendations] = useState(null);
+  const [dark, setDark] = useDarkMode();
 
-  /**
-   * Dadas atualizações no formulário, necessário atualizar a lista de recomendações - OK
-   */
   const handleSubmit = (data) => {
     setRecommendations(data);
-  }
+  };
+
+  const handleReset = () => {
+    setRecommendations(null);
+  };
 
   return (
-    <div className="bg-gray-100 min-h-screen flex flex-col justify-center items-center">
-      <h1 className="text-3xl font-bold mb-8">Recomendador de Produtos RD Station</h1>
-      <div className="bg-white p-8 rounded-lg shadow-md w-full md:w-3/4 lg:w-1/2 grid grid-cols-1 md:grid-cols-2 gap-8">
-        <div className="col-span-2 mb-4">
-          <p className="text-lg">
-            Bem-vindo ao Recomendador de Produtos RD Station. Aqui você pode encontrar uma variedade de produtos da RD Station, cada um projetado para atender às necessidades específicas do seu negócio. De CRM a Marketing, de Conversas a Inteligência Artificial, temos uma solução para ajudar você a alcançar seus objetivos. Use o formulário abaixo para selecionar suas preferências e funcionalidades desejadas e receba recomendações personalizadas de produtos que melhor atendam às suas necessidades.
-          </p>
+    <div className="bg-background min-h-screen flex flex-col items-center px-4 py-12 transition-colors duration-300">
+      <div className="w-full max-w-xl">
+        <div className="fixed top-4 right-4">
+          <Button variant="icon" onClick={() => setDark(!dark)} aria-label="Alternar tema">
+            {dark ? <SunIcon className="w-5 h-5" /> : <MoonIcon className="w-5 h-5" />}
+          </Button>
         </div>
-        <div>
-          <Form onSubmit={handleSubmit}/>
+
+        <div className="text-center mb-8">
+          <h1 className="text-2xl font-bold text-primary">Recomendador de Produtos</h1>
+          <p className="text-secondary text-sm mt-1">Encontre a solução ideal para o seu negócio</p>
         </div>
-        <div>
-          <RecommendationList recommendations={recommendations} />
-        </div>
+
+        {recommendations === null ? (
+          <Form onSubmit={handleSubmit} />
+        ) : (
+          <RecommendationList recommendations={recommendations} onReset={handleReset} />
+        )}
       </div>
     </div>
   );
